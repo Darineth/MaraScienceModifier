@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using KSP.UI.Screens;
 
 namespace Mara
 {
@@ -19,17 +20,111 @@ namespace Mara
             _blnLoadedScienceValues = true;
 
             LoadScienceModifiers();
+
+            GameEvents.onGUIRnDComplexSpawn.Add(new EventVoid.OnEvent(OnGUIRnDComplexSpawn));
+            GameEvents.onGameSceneLoadRequested.Add(new EventData<GameScenes>.OnEvent(OnGameSceneLoadRequested));
+            RDTechTree.OnTechTreeSpawn.Add(new EventData<RDTechTree>.OnEvent(OnTechTreeSpawn));
+        }
+
+        private void OnGUIRnDComplexSpawn()
+        {
+            Debug.Log("[MaraScienceModifier.OnGUIRnDComplexSpawn]");
+
+            System.Text.StringBuilder sbParts = new System.Text.StringBuilder();
+            foreach (AvailablePart p in PartLoader.LoadedPartsList)
+            {
+                string configName1 = "?";
+                string configName2 = "?";
+                string configName3 = "?";
+                if (p.partConfig != null && !string.IsNullOrEmpty(p.partConfig.GetValue("name")))
+                {
+                    configName1 = p.partConfig.GetValue("name");
+                }
+                if (p.internalConfig != null && !string.IsNullOrEmpty(p.internalConfig.GetValue("name")))
+                {
+                    configName2 = p.internalConfig.GetValue("name");
+                }
+                if (p.partUrlConfig != null && !string.IsNullOrEmpty(p.partUrlConfig.name))
+                {
+                    configName3 = p.partUrlConfig.name;
+                }
+                sbParts
+                    .Append(p.name).Append("\t")
+                    .Append(configName1).Append("\t")
+                    .Append(configName2).Append("\t")
+                    .Append(configName3).Append("\t")
+                    .Append(p.TechRequired).Append("\t")
+                    .Append(p.title).AppendLine();
+            }
+
+            Debug.Log(sbParts.ToString());
+
+            Debug.Log("[MaraScienceModifier.OnGUIRnDComplexSpawn.Unassigned]");
+
+            sbParts = new System.Text.StringBuilder();
+            foreach (AvailablePart p in PartLoader.LoadedPartsList)
+            {
+                if (p.TechRequired == "Unassigned")
+                {
+                    string configName1 = "?";
+                    string configName2 = "?";
+                    string configName3 = "?";
+                    if (p.partConfig != null && !string.IsNullOrEmpty(p.partConfig.GetValue("name")))
+                    {
+                        configName1 = p.partConfig.GetValue("name");
+                    }
+                    if (p.internalConfig != null && !string.IsNullOrEmpty(p.internalConfig.GetValue("name")))
+                    {
+                        configName2 = p.internalConfig.GetValue("name");
+                    }
+                    if (p.partUrlConfig != null && !string.IsNullOrEmpty(p.partUrlConfig.name))
+                    {
+                        configName3 = p.partUrlConfig.name;
+                    }
+                    sbParts
+                        .Append(p.name).Append("\t")
+                        .Append(configName1).Append("\t")
+                        .Append(configName2).Append("\t")
+                        .Append(configName3).Append("\t")
+                        .Append(p.TechRequired).Append("\t")
+                        .Append(p.title).AppendLine();
+                }
+            }
+
+            Debug.Log(sbParts.ToString());
+        }
+
+        private void OnTechTreeSpawn(RDTechTree tree)
+        {
+
+            Debug.Log("[MaraScienceModifier.OnTechTreeSpawn]");
+
+            System.Text.StringBuilder sbNodes = new System.Text.StringBuilder();
+            foreach (RDNode n in tree.controller.nodes)
+            {
+                sbNodes.Append(n.name).Append(",").Append(n.tech.techID).Append(",").Append(n.tech.partsAssigned != null ? n.tech.partsAssigned.Count.ToString() : "<null>").AppendLine();
+            }
+
+            Debug.Log(sbNodes.ToString());
+        }
+
+        private void OnGameSceneLoadRequested(GameScenes scene)
+        {
+            if (scene == GameScenes.SPACECENTER)
+            {
+                Debug.Log("[MaraScienceModifier.OnGameSceneLoadRequested]: " + scene.ToString());
+            }
         }
 
         void LoadScienceModifiers()
         {
-            /*try
+            try
             {
                 Debug.Log("[MaraScienceModifier]: Agents List:");
 
                 foreach (Contracts.Agents.Agent agent in Contracts.Agents.AgentList.Instance.Agencies)
                 {
-                    Debug.Log(agent.Name);
+                    Debug.Log("Name: " + agent.Name + ", Title: " + (agent.Title == null ? "<NULL>" : agent.Title) );
                     foreach (Contracts.Agents.AgentMentality mentality in agent.Mentality)
                     {
                         Debug.Log("\t- " + mentality.Description);
@@ -38,9 +133,9 @@ namespace Mara
             }
             catch
             {
-            }*/
+            }
 
-            /*try
+            try
             {
                 for (int ii = 1; ii < 100; ++ii)
                 {
@@ -51,6 +146,11 @@ namespace Mara
                     if (contract != null)
                     {
                         Debug.Log(contract.MissionControlTextRich());
+
+                        if(contract.Agent == null)
+                        {
+                            Debug.Log("Generated contract with NULL Agent: " + contract.Title);
+                        }
 
                         foreach (Contracts.Agents.Agent agent in Contracts.Agents.AgentList.Instance.Agencies)
                         {
@@ -73,7 +173,7 @@ namespace Mara
             catch(Exception ex)
             {
                 Debug.LogException(ex);
-            }*/
+            }
 
             try
             {
@@ -131,14 +231,14 @@ namespace Mara
                 {
                     Debug.Log("[MaraScienceModifier]: Checking for Body Config: " + cb.gameObject.name + "...");
 
-                    /*Debug.Log("[MaraScienceModifier]: Default Body Science Data:\n" +
+                    Debug.Log("[MaraScienceModifier]: Default Body Science Data:\n" +
                               "LandedDataValue = " + cb.scienceValues.LandedDataValue + "\n" +
                               "SplashedDataValue = " + cb.scienceValues.SplashedDataValue + "\n" +
                               "InSpaceLowDataValue = " + cb.scienceValues.InSpaceLowDataValue + "\n" +
                               "InSpaceHighDataValue = " + cb.scienceValues.InSpaceHighDataValue + "\n" +
                               "FlyingHighDataValue = " + cb.scienceValues.FlyingHighDataValue + "\n" +
                               "FlyingLowDataValue = " + cb.scienceValues.FlyingLowDataValue + "\n" +
-                              "RecoveryValue = " + cb.scienceValues.RecoveryValue);*/
+                              "RecoveryValue = " + cb.scienceValues.RecoveryValue);
 
                     if (cnSettings.HasNode(cb.gameObject.name))
                     {
@@ -171,13 +271,16 @@ namespace Mara
 
         void CreateToolbarButton()
         {
-            Toolbar.IButton btn = Toolbar.ToolbarManager.Instance.add("MaraScienceModifier", "Reload");
-            btn.ToolTip = "Reload MaraScienceModifier Config";
-            btn.TexturePath = "MaraScienceModifier/Textures/ToolbarButton";
-            btn.OnClick += (e) =>
-            {
-                LoadScienceModifiers();
-            };
+            //Toolbar.IButton btn = Toolbar.ToolbarManager.Instance.add("MaraScienceModifier", "Reload");
+            //btn.ToolTip = "Reload MaraScienceModifier Config";
+            //btn.TexturePath = "MaraScienceModifier/Textures/ToolbarButton";
+            //btn.OnClick += (e) =>
+            //{
+            //    //LoadScienceModifiers();
+            //    GC.Collect();
+            //    GC.Collect();
+            //    GC.Collect();
+            //};
         }
     }
 }
